@@ -15,6 +15,13 @@ let satelliteStreets = L.tileLayer('https://api.mapbox.com/styles/v1/mapbox/sate
 	accessToken: API_KEY
 });
 
+// We create the third tile layer that will be the background of our map.
+let navDay = L.tileLayer('https://api.mapbox.com/styles/v1/mapbox/navigation-day-v1/tiles/{z}/{x}/{y}?access_token={accessToken}', {
+	attribution: 'Map data &copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors, <a href="https://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, Imagery (c) <a href="https://www.mapbox.com/">Mapbox</a>',
+	maxZoom: 18,
+	accessToken: API_KEY
+});
+
 // Create the map object with center, zoom level and default layer.
 let map = L.map('mapid', {
 	center: [40.7, -94.5],
@@ -25,7 +32,8 @@ let map = L.map('mapid', {
 // Create a base layer that holds all three maps.
 let baseMaps = {
   "Streets": streets,
-  "Satellite": satelliteStreets
+  "Satellite": satelliteStreets,
+  "Navigation": navDay
 };
 
 // 1. Add a 2nd layer group for the tectonic plate data.
@@ -45,8 +53,8 @@ let overlays = {
 // layers are visible.
 L.control.layers(baseMaps, overlays).addTo(map);
 
-// Set const style format for tectonic plate lines
-let myStyle = {
+// Set a style format for tectonic plate lines
+let linestringStyle = {
   color: "red",
   weight: 2
 };
@@ -69,12 +77,12 @@ d3.json("https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_week.geoj
     };
   };
 
-  function styleInfo2(feature) {
+  function styleInfoMaj(feature) {
     return {
       opacity: 1,
       fillOpacity: 1,
       // 5. Change the color function to use three colors for the major earthquakes based on the magnitude of the earthquake.
-      fillColor: getColor2(feature.properties.mag),
+      fillColor: getColorMaj(feature.properties.mag),
       color: "#000000",
       // 6. Use the function that determines the radius of the earthquake marker based on its magnitude.
       radius: getRadius(feature.properties.mag),
@@ -104,7 +112,7 @@ d3.json("https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_week.geoj
   };
 
   // 5. Change the color function to use three colors for the major earthquakes based on the magnitude of the earthquake.
-  function getColor2(magnitude) {
+  function getColorMaj(magnitude) {
     if (magnitude > 6) {
       return "#6F0E7B";
     }
@@ -153,7 +161,7 @@ d3.json("https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/4.5_week.geoj
     },
 
   // 4. Use the same style as the earthquake data.
-  style: styleInfo2,
+  style: styleInfoMaj,
   onEachFeature: function(feature, layer) {
     layer.bindPopup("Magnitude: "+feature.properties.mag+ "<br>Location: "+feature.properties.place)
   }
@@ -228,7 +236,7 @@ legend2.onAdd = function() {
   // 3. Use d3.json to make a call to get our Tectonic Plate geoJSON data.
   d3.json("https://raw.githubusercontent.com/fraxen/tectonicplates/master/GeoJSON/PB2002_boundaries.json").then(function(data) {
     L.geoJSON(data, {
-      style: myStyle,
+      style: linestringStyle,
       onEachFeature: function(feature,layer) {
         layer.bindPopup("<h2>"+feature.properties.Name+"</h2>")
       }
